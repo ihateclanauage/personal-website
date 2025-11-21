@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yuting Chen | Product Dashboard</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230f172a%22/><text x=%2250%22 y=%2270%22 font-family=%22sans-serif%22 font-weight=%22bold%22 font-size=%2260%22 fill=%22white%22 text-anchor=%22middle%22>YC</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    
+    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            overflow: hidden;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Boot Screen */
+        #boot-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #020617;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+
+        #boot-layer.slide-up {
+            transform: translateY(-100%);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        /* Utilities */
+        .sidebar-active {
+            background: linear-gradient(90deg, #eff6ff 0%, #ffffff 100%);
+            color: #2563eb;
+            border-right: 3px solid #3b82f6;
+        }
+
+        .hover-lift {
+            transition: all 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+        }
+
+        .terminal-bg {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+        }
+        
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Nebula Float Animation */
+        @keyframes float {
+            0% { transform: translate(0px, 0px); }
+            50% { transform: translate(0px, -8px); }
+            100% { transform: translate(0px, 0px); }
+        }
+        
+        /* View Transition */
+        .view-enter {
+            animation: slideIn 0.4s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="root" class="w-full h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+// --- WELCOME / ONBOARDING MODAL ---
+        const WelcomeModal = ({ onDismiss, onQuickNav }) => {
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm view-enter">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+                        {/* Header */}
+                        <div className="bg-slate-50 p-6 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-200">YC</div>
+                                <div>
+                                    <h3 className="font-bold text-slate-900">System Access Granted</h3>
+                                    <p className="text-xs text-slate-500">Guest User: HR / Recruiter</p>
+                                </div>
+                            </div>
+                            <div className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded border border-green-200 uppercase">Online</div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 space-y-4">
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                Welcome to <strong>Yuting Chen's</strong> interactive portfolio. This dashboard visualizes my product management skills and technical projects.
+                            </p>
+                            
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 items-start">
+                                <i data-lucide="mouse-pointer-2" className="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></i>
+                                <div className="text-xs text-blue-800">
+                                    <strong>Quick Tip:</strong> Use the <span className="font-bold hidden md:inline">Sidebar Menu (Left)</span><span className="font-bold md:hidden">Menu Button (Top Right)</span> to navigate between my <strong>Projects</strong>, <strong>Research</strong>, and <strong>Skills</strong>.
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+                             <button 
+                                onClick={onDismiss}
+                                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-medium text-sm rounded-lg hover:bg-slate-50 transition-colors"
+                            >
+                                Explore Dashboard
+                            </button>
+                            <button 
+                                onClick={() => onQuickNav('projects')}
+                                className="flex-1 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                            >
+                                View Projects <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- SKILL GRAPH COMPONENT (NEBULA EDITION) ---
+        const SkillGraph = () => {
+            const [hoveredNode, setHoveredNode] = useState(null);
+
+            // Nodes: Smaller radius, spread out coordinates to prevent collision
+            const nodes = [
+                // Center
+                { id: 'PM', x: 250, y: 160, r: 14, label: 'PM Core', color: '#3b82f6', type: 'core' },
+                
+                // Categories (Mid layer)
+                { id: 'Data', x: 140, y: 90, r: 9, label: 'Data Intel', color: '#8b5cf6', type: 'category' },
+                { id: 'Fintech', x: 360, y: 90, r: 9, label: 'Fintech', color: '#10b981', type: 'category' },
+                { id: 'Strategy', x: 250, y: 260, r: 9, label: 'Strategy', color: '#f59e0b', type: 'category' },
+
+                // Leaves - Data (Spread left)
+                { id: 'Python', x: 60, y: 60, r: 4, label: 'Python', color: '#a78bfa', type: 'skill', parent: 'Data' },
+                { id: 'SQL', x: 80, y: 130, r: 4, label: 'SQL', color: '#a78bfa', type: 'skill', parent: 'Data' },
+                { id: 'Algo', x: 180, y: 40, r: 4, label: 'Algo', color: '#a78bfa', type: 'skill', parent: 'Data' },
+
+                // Leaves - Fintech (Spread right)
+                { id: 'Trade', x: 440, y: 60, r: 4, label: 'Trading', color: '#34d399', type: 'skill', parent: 'Fintech' },
+                { id: 'Risk', x: 420, y: 130, r: 4, label: 'Risk Ctrl', color: '#34d399', type: 'skill', parent: 'Fintech' },
+                { id: 'Settle', x: 340, y: 30, r: 4, label: 'Settlement', color: '#34d399', type: 'skill', parent: 'Fintech' },
+
+                // Leaves - Strategy (Spread bottom)
+                { id: 'B-End', x: 160, y: 290, r: 4, label: 'B-End', color: '#fbbf24', type: 'skill', parent: 'Strategy' },
+                { id: 'Growth', x: 340, y: 290, r: 4, label: 'Comm.', color: '#fbbf24', type: 'skill', parent: 'Strategy' },
+                { id: 'Comm', x: 250, y: 310, r: 4, label: 'Insight', color: '#fbbf24', type: 'skill', parent: 'Strategy' },
+            ];
+
+            const links = [
+                { source: 'PM', target: 'Data' },
+                { source: 'PM', target: 'Fintech' },
+                { source: 'PM', target: 'Strategy' },
+                { source: 'Data', target: 'Python' },
+                { source: 'Data', target: 'SQL' },
+                { source: 'Data', target: 'Algo' },
+                { source: 'Fintech', target: 'Trade' },
+                { source: 'Fintech', target: 'Risk' },
+                { source: 'Fintech', target: 'Settle' },
+                { source: 'Strategy', target: 'B-End' },
+                { source: 'Strategy', target: 'Growth' },
+                { source: 'Strategy', target: 'Comm' },
+                { source: 'Algo', target: 'Trade', dashed: true },
+                { source: 'Python', target: 'Risk', dashed: true },
+            ];
+
+            return (
+                <div className="w-full h-80 relative bg-slate-50/50 rounded-xl overflow-hidden mt-4 border border-slate-100 select-none">
+                    <svg className="w-full h-full" viewBox="0 0 500 340" preserveAspectRatio="xMidYMid meet">
+                        {/* Links */}
+                        {links.map((link, i) => {
+                            const source = nodes.find(n => n.id === link.source);
+                            const target = nodes.find(n => n.id === link.target);
+                            const isHighlighted = hoveredNode && (
+                                hoveredNode === link.source || 
+                                hoveredNode === link.target || 
+                                (nodes.find(n => n.id === hoveredNode).parent === link.source) ||
+                                (nodes.find(n => n.id === hoveredNode).parent === nodes.find(n => n.id === link.target).parent)
+                            );
+                            
+                            return (
+                                <line 
+                                    key={i}
+                                    x1={source.x} y1={source.y}
+                                    x2={target.x} y2={target.y}
+                                    stroke={isHighlighted ? source.color : "#cbd5e1"}
+                                    strokeWidth={isHighlighted ? 1.5 : 0.5}
+                                    strokeDasharray={link.dashed ? "4 4" : "0"}
+                                    className="transition-all duration-300"
+                                    opacity={isHighlighted ? 1 : 0.3}
+                                    style={{
+                                        // Simple trick: links move slightly with nodes? 
+                                        // For simplicity in SVG, we just animate nodes, links stay static or we'd need complex JS.
+                                        // To keep it "Nebula" without breaking links, we apply animation to the GROUP containing both if possible, 
+                                        // but here we just animate nodes. Links staying static while nodes float looks like "tethers". 
+                                        // It's a cool effect.
+                                    }}
+                                />
+                            );
+                        })}
+
+                        {/* Nodes with Float Animation */}
+                        {nodes.map((node, i) => {
+                            const isHovered = hoveredNode === node.id;
+                            const isActive = isHovered || (hoveredNode && links.some(l => (l.source === node.id && l.target === hoveredNode) || (l.target === node.id && l.source === hoveredNode)));
+                            
+                            // Randomize animation delay for "Nebula" organic feel
+                            const delay = useMemo(() => Math.random() * -5 + 's', []);
+                            const duration = useMemo(() => 3 + Math.random() * 2 + 's', []);
+
+                            return (
+                                <g 
+                                    key={node.id} 
+                                    onMouseEnter={() => setHoveredNode(node.id)}
+                                    onMouseLeave={() => setHoveredNode(null)}
+                                    className="cursor-pointer hover-lift"
+                                    style={{ 
+                                        transformOrigin: `${node.x}px ${node.y}px`,
+                                        animation: `float ${duration} ease-in-out infinite`,
+                                        animationDelay: delay
+                                    }}
+                                >
+                                    {/* Glow effect */}
+                                    <circle 
+                                        cx={node.x} cy={node.y} 
+                                        r={node.r * 2.5} 
+                                        fill={node.color} 
+                                        opacity={isHovered ? 0.15 : 0}
+                                        className="transition-all duration-300"
+                                    />
+                                    
+                                    {/* Main Node */}
+                                    <circle 
+                                        cx={node.x} cy={node.y} 
+                                        r={node.r + (isActive ? 1 : 0)} 
+                                        fill={node.color} 
+                                        opacity={isActive ? 1 : 0.8}
+                                        className="transition-all duration-300 shadow-sm"
+                                    />
+                                    
+                                    {/* Label */}
+                                    <text 
+                                        x={node.x} y={node.y + node.r + 12} 
+                                        textAnchor="middle" 
+                                        fill="#64748b" 
+                                        fontSize={node.type === 'core' ? 10 : 8}
+                                        fontWeight={isActive ? "bold" : "500"}
+                                        className="pointer-events-none select-none tracking-tight"
+                                        style={{ textShadow: '0 1px 2px white' }}
+                                    >
+                                        {node.label}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                    </svg>
+                </div>
+            );
+        };
+
+        // --- BOOT SEQUENCE ---
+        const BootLayer = ({ onComplete }) => {
+            const [logs, setLogs] = useState([]);
+            const [progress, setProgress] = useState(0);
+            const [isComplete, setIsComplete] = useState(false);
+            const [shouldUnmount, setShouldUnmount] = useState(false);
+            
+            const bootMessages = [
+                "INITIALIZING SYSTEM v9.1...",
+                "USER: YUTING CHEN (ID: YC-001)...",
+                "VERIFYING ACADEMIC RECORDS: RANK 1/73 [OK]",
+                "LOADING KNOWLEDGE NEBULA... [OK]",
+                "MAPPING SKILL ONTOLOGY... [DONE]",
+                "FETCHING ASSETS: PROJECT_FILES [3 FOUND]...",
+                "SYSTEM READY."
+            ];
+
+            const handleSkip = () => {
+                setIsComplete(true);
+                setTimeout(() => {
+                    onComplete();
+                    setShouldUnmount(true);
+                }, 500);
+            };
+
+            useEffect(() => {
+                let logIndex = 0;
+                const logTimer = setInterval(() => {
+                    if (logIndex < bootMessages.length) {
+                        setLogs(prev => [...prev, bootMessages[logIndex]]);
+                        logIndex++;
+                    } else {
+                        clearInterval(logTimer);
+                    }
+                }, 150); 
+
+                const progressTimer = setInterval(() => {
+                    setProgress(old => {
+                        if (old >= 100) {
+                            clearInterval(progressTimer);
+                            setTimeout(() => {
+                                setIsComplete(true);
+                                setTimeout(() => {
+                                    onComplete();
+                                    setTimeout(() => setShouldUnmount(true), 100); 
+                                }, 800);
+                            }, 200);
+                            return 100;
+                        }
+                        return Math.min(old + Math.random() * 20, 100); 
+                    });
+                }, 100);
+
+                return () => {
+                    clearInterval(logTimer);
+                    clearInterval(progressTimer);
+                };
+            }, []);
+
+            if (shouldUnmount) return null;
+
+            return (
+                <div id="boot-layer" className={isComplete ? "slide-up" : ""}>
+                    <div className="font-mono text-sm text-green-500 mb-8 w-80 md:w-[500px]">
+                        {logs.map((log, i) => (
+                            <div key={i} className="mb-1 truncate">
+                                <span className="opacity-50 mr-2 text-slate-500">[{i < 9 ? `0${i+1}` : i+1}]</span>
+                                {log}
+                            </div>
+                        ))}
+                        <div className="mt-2 animate-pulse">_</div>
+                    </div>
+                    <div className="w-64 md:w-96 bg-slate-800 h-1 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 transition-all duration-100 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <div className="mt-2 font-mono text-green-500 text-xs tracking-widest">LOADING PROFILE... {Math.round(progress)}%</div>
+                    <button onClick={handleSkip} className="absolute bottom-8 right-8 text-slate-500 text-xs hover:text-white transition-colors font-mono underline cursor-pointer">[SKIP_BOOT]</button>
+                </div>
+            );
+        };
+
+        // --- WIDGETS ---
+        const SafeChart = () => {
+            const [libLoaded, setLibLoaded] = useState(false);
+            useEffect(() => {
+                if (window.Recharts) setLibLoaded(true);
+                else {
+                    const interval = setInterval(() => { if (window.Recharts) { setLibLoaded(true); clearInterval(interval); }}, 500);
+                    return () => clearInterval(interval);
+                }
+            }, []);
+            if (!libLoaded) return <div className="w-full h-64 flex items-center justify-center bg-slate-50 rounded text-xs text-slate-400">Loading...</div>;
+            const { AreaChart, Area, CartesianGrid, Tooltip, ResponsiveContainer, Legend } = window.Recharts;
+            const data = [
+                { name: 'T1', cost: 20, marketVal: 30 },
+                { name: 'T2', cost: 45, marketVal: 40 },
+                { name: 'T3', cost: 60, marketVal: 55 },
+                { name: 'T4', cost: 50, marketVal: 80 },
+                { name: 'T5', cost: 40, marketVal: 95 },
+            ];
+            return (
+                <div className="w-full h-64 mt-4">
+                     <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data}>
+                            <defs>
+                                <linearGradient id="colorMarket" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
+                            <Tooltip contentStyle={{backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '12px', color: '#fff'}} itemStyle={{fontSize: '12px'}} labelStyle={{display: 'none'}}/>
+                            <Legend verticalAlign="top" height={36} iconType="circle" />
+                            <Area type="monotone" dataKey="marketVal" name="Market Val (Tobin's Q)" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorMarket)" />
+                            <Area type="monotone" dataKey="cost" name="Fin. Pressure (Cost)" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorCost)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                    <div className="text-center text-xs text-slate-400 mt-2 font-mono">Figure 1: Tech Investment Returns Divergence</div>
+                </div>
+            );
+        };
+
+// --- FIXED SENTIMENT CHART ---
+        const SentimentChart = () => {
+            const [libLoaded, setLibLoaded] = useState(false);
+            useEffect(() => {
+                if (window.Recharts) setLibLoaded(true);
+            }, []);
+
+            if (!libLoaded) return <div className="w-full h-48 flex items-center justify-center bg-slate-50 rounded text-xs text-slate-400">Loading...</div>;
+
+            const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } = window.Recharts;
+            
+            const data = [
+                { name: 'Low Info Qty', Positive: 85, Negative: 90 }, 
+                { name: 'High Info Qty', Positive: 88, Negative: 45 }, 
+            ];
+
+            return (
+                <div className="w-full mt-4 flex flex-col items-center">
+                    {/* 给图表一个明确的独立高度容器 */}
+                    <div className="w-full h-48">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} stroke="#f1f5f9"/>
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" tick={{fontSize: 10}} width={70} />
+                                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '12px', color: '#fff'}} itemStyle={{fontSize: '12px'}} />
+                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{fontSize: '10px'}}/>
+                                <Bar dataKey="Positive" name="Pos Emotion" fill="#34d399" radius={[0, 4, 4, 0]} barSize={16} />
+                                <Bar dataKey="Negative" name="Neg Emotion" fill="#f87171" radius={[0, 4, 4, 0]} barSize={16} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    {/* 文字自然排列在下方，不会重叠 */}
+                    <div className="text-center text-[10px] text-slate-400 mt-1 font-mono">Figure 2: Interaction Effect</div>
+                </div>
+            );
+        };
+
+        const TerminalWidget = () => {
+            const [lines, setLines] = useState(["> System initialized."]);
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    const logs = ["FETCH: SH600519 - VOL 1.2M", "ANALYSIS: Sentiment Score 0.82 (Pos)", "STRATEGY: Mean Reversion Check...", "EXECUTING: B-End Logic Module...", "OPTIMIZING: Workflow latency -15ms", "SYNC: DeepSeek API connected", "MONITOR: 24/7 Stability Check OK"];
+                    const randomLog = logs[Math.floor(Math.random() * logs.length)];
+                    const time = new Date().toLocaleTimeString('en-US', {hour12: false});
+                    setLines(prev => {
+                        const newLines = [...prev, `[${time}] ${randomLog}`];
+                        if (newLines.length > 8) return newLines.slice(newLines.length - 8);
+                        return newLines;
+                    });
+                }, 2000);
+                return () => clearInterval(interval);
+            }, []);
+            return (
+                <div className="w-full h-full min-h-[160px] terminal-bg rounded-lg p-4 font-mono text-xs border border-slate-800 shadow-inner flex flex-col">
+                    <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-slate-800/50">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                        <div className="ml-auto text-[10px] text-slate-500">bash — live</div>
+                    </div>
+                    <div className="overflow-y-hidden flex-1 text-green-400 space-y-1">
+                        {lines.map((line, i) => (<div key={i} className="truncate opacity-90">{line}</div>))}
+                        <div className="animate-pulse">_</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const DynamicTypewriter = () => {
+            const roles = ["Fintech Product.", "Data Strategy.", "Digital Health.", "B-End Systems."];
+            const [text, setText] = useState("");
+            const [roleIndex, setRoleIndex] = useState(0);
+            const [isDeleting, setIsDeleting] = useState(false);
+            useEffect(() => {
+                const currentRole = roles[roleIndex];
+                const typeSpeed = isDeleting ? 50 : 100;
+                const timer = setTimeout(() => {
+                    if (!isDeleting && text === currentRole) setTimeout(() => setIsDeleting(true), 2000);
+                    else if (isDeleting && text === "") { setIsDeleting(false); setRoleIndex((prev) => (prev + 1) % roles.length); }
+                    else setText(currentRole.substring(0, isDeleting ? text.length - 1 : text.length + 1));
+                }, typeSpeed);
+                return () => clearTimeout(timer);
+            }, [text, isDeleting, roleIndex]);
+            return <span className="text-blue-600">{text}<span className="cursor-blink">|</span></span>;
+        };
+
+        const ProjectCard = ({ title, subtitle, tags, children, highlight, className, onClick, icon = "cpu", color="blue" }) => (
+            <div onClick={onClick} className={`bg-white rounded-xl border ${highlight ? `border-${color}-200 shadow-lg shadow-${color}-50/50` : 'border-slate-200 shadow-sm'} p-6 flex flex-col h-full hover-lift ${className} ${onClick ? 'cursor-pointer' : ''} group`}>
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors flex items-center gap-2">
+                            {title}
+                            {onClick && <i data-lucide="arrow-up-right" className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"></i>}
+                        </h3>
+                        <p className="text-sm text-slate-500">{subtitle}</p>
+                    </div>
+                    {highlight && <div className={`p-1.5 bg-${color}-50 rounded-md text-${color}-500`}><i data-lucide={icon} className="w-4 h-4"></i></div>}
+                </div>
+                <div className="flex-grow relative">{children}</div>
+                <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-slate-50">
+                    {tags.map(tag => (<span key={tag} className="px-2.5 py-1 bg-slate-50 text-slate-600 text-xs font-medium rounded-md border border-slate-100 font-mono">{tag}</span>))}
+                </div>
+            </div>
+        );
+
+        const FeatureBadge = ({ name, status = "shipped" }) => (
+            <div className="flex items-center justify-between bg-white p-2.5 rounded border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+                <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${status === 'shipped' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className="text-xs font-medium text-slate-700">{name}</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400 uppercase">{status}</span>
+            </div>
+        );
+
+        const DocSection = ({ title, children }) => (
+            <div className="mb-8 animate-fade-in">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">{title}</h3>
+                {children}
+            </div>
+        );
+
+        const CodeBlock = ({ code, language = 'python' }) => {
+            useEffect(() => { if (window.hljs) window.hljs.highlightAll(); }, []);
+            return (
+                <div className="rounded-lg overflow-hidden bg-[#282c34] text-sm shadow-md my-4">
+                    <div className="px-4 py-2 bg-[#21252b] text-slate-400 text-xs font-mono border-b border-slate-700 flex justify-between">
+                        <span>script.py</span>
+                        <span>Python</span>
+                    </div>
+                    <pre className="m-0"><code className={`language-${language}`}>{code}</code></pre>
+                </div>
+            );
+        };
+
+        // --- VIEWS ---
+
+        const DashboardView = ({ booted }) => (
+            <div className="view-enter space-y-8">
+                {/* Hero */}
+                <div className="mb-10 min-h-[60px]">
+                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                        Hi, I'm Yuting. I build <DynamicTypewriter />
+                    </h2>
+                    <div className="text-slate-600 max-w-3xl leading-relaxed text-lg">
+                        <p className="mb-2">
+                            <span className="font-bold text-slate-900">Product Management Candidate</span> specializing in transforming complex logic into clear products.
+                        </p>
+                        <p className="text-base text-slate-500">
+                            Whether it's <span className="font-semibold text-slate-700">Financial Settlement</span>, <span className="font-semibold text-slate-700">Algo Trading</span>, or <span className="font-semibold text-slate-700">Digital Health</span>, I bridge the gap between Business Strategy and Technical Execution.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Skill Graph - NEBULA EDITION */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row gap-8">
+                    <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">Knowledge Nebula</h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            An interactive map of my interdisciplinary skillset. Nodes drift organically, representing the fluid connection between technical implementation and domain expertise.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                                <div className="text-xs text-slate-400 font-bold uppercase">Data Intelligence</div>
+                                <div className="font-semibold text-slate-800 text-sm">Python, SQL, Analysis</div>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                                <div className="text-xs text-slate-400 font-bold uppercase">Fintech</div>
+                                <div className="font-semibold text-slate-800 text-sm">Trading, Settlement, Risk</div>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                                <div className="text-xs text-slate-400 font-bold uppercase">Strategy</div>
+                                <div className="font-semibold text-slate-800 text-sm">B-End, Growth, Commercial</div>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded border border-slate-100">
+                                <div className="text-xs text-slate-400 font-bold uppercase">Communication</div>
+                                <div className="font-semibold text-slate-800 text-sm">M.A. Degree, Stakeholder Mgmt</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="w-full md:w-1/2 lg:w-2/5">
+                        <SkillGraph />
+                    </div>
+                </div>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                        { label: "Academic Rank", value: "1st / Cohort", icon: "trophy", color: "yellow" },
+                        { label: "Experience", value: "Master's +", icon: "clock", color: "blue" },
+                        { label: "Projects", value: "3 Major Shipped", icon: "layers", color: "emerald" },
+                        { label: "Stakeholders", value: "20+ Managed", icon: "users", color: "purple" }
+                    ].map((stat, idx) => (
+                        <div key={idx} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover-lift cursor-default">
+                            <div className={`w-12 h-12 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 flex items-center justify-center shrink-0`}>
+                                <i data-lucide={stat.icon} className="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <div className="text-[10px] text-slate-500 uppercase font-bold">{stat.label}</div>
+                                <div className="font-bold text-slate-800 text-lg">{stat.value}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const ProjectsView = ({ onDetailClick }) => (
+            <div className="view-enter grid grid-cols-1 gap-6">
+                <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-slate-900">Featured Projects</h2>
+                    <p className="text-slate-500">Demonstrating versatility across Fintech, Data, and Healthcare.</p>
+                </div>
+
+                {/* Ximalaya - CLICKABLE */}
+                <div onClick={() => onDetailClick('ximalaya-doc')} className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 cursor-pointer hover-lift group relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg z-10 shadow-sm">
+                        View Documentation
+                    </div>
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        <div className="flex-1 space-y-6">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-purple-100 rounded text-purple-600"><i data-lucide="layout-grid" className="w-6 h-6"></i></div>
+                                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">B2B Transaction Platform</h3>
+                                </div>
+                                <div className="flex flex-wrap gap-3 text-sm text-slate-500 font-mono items-center">
+                                    <span>Fintech / B2B</span>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                    <span>Settlement Logic</span>
+                                </div>
+                            </div>
+                            <p className="text-slate-600 leading-relaxed">
+                                Spearheaded the 0-to-1 build of "Honey Sound". Designed <strong>multi-role clearing & settlement</strong> systems. Relevant for: <strong>Fintech PM, Strategy PM</strong>.
+                            </p>
+                        </div>
+                        <div className="w-full lg:w-1/3 flex flex-col gap-3 justify-center">
+                             <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 text-center">
+                                <div className="text-xl font-bold text-slate-800">15+</div>
+                                <div className="text-[10px] text-slate-400 uppercase mt-1">Features Shipped</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Trading Engine - CLICKABLE NOW */}
+                <div onClick={() => onDetailClick('trading-doc')} className="bg-white rounded-xl border border-blue-200 shadow-lg shadow-blue-50/50 p-8 flex flex-col lg:flex-row gap-8 cursor-pointer hover-lift group">
+                     <div className="flex-1 space-y-6">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-blue-100 rounded text-blue-600"><i data-lucide="cpu" className="w-6 h-6"></i></div>
+                                <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Automated Trading System</h3>
+                            </div>
+                            <p className="text-sm text-slate-500 font-mono">Independent Developer • Python & LLM Agent</p>
+                        </div>
+                        <div className="text-slate-600 leading-relaxed space-y-4">
+                            <p><span className="font-semibold text-slate-900">Problem:</span> Manual trading is slow, emotionally biased, and cannot process unstructured news data in real-time.</p>
+                            <p><span className="font-semibold text-slate-900">Solution:</span> Built a high-frequency engine using <code>ccxt</code> for execution and <code>DeepSeek API</code> for sentiment analysis. The system ingests news, scores sentiment, and triggers mean-reversion trades.</p>
+                        </div>
+                    </div>
+                    <div className="w-full lg:w-1/2 pointer-events-none">
+                        <TerminalWidget />
+                    </div>
+                </div>
+
+                {/* CAS - Healthcare - CLICKABLE NOW */}
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                    <ProjectCard 
+                        title="Digital Health Screening" 
+                        subtitle="Product Intern • Chinese Academy of Sciences"
+                        tags={['Healthcare', '0-to-1', 'User Research']}
+                        highlight={true}
+                        color="emerald"
+                        icon="activity"
+                        className="h-full"
+                        onClick={() => onDetailClick('cas-doc')}
+                    >
+                        <p className="text-slate-600 leading-relaxed mb-4">
+                            Translated complex neurological research (AD screening) into a quantifiable, user-friendly digital product for seniors.
+                        </p>
+                        <ul className="space-y-2 text-sm text-slate-600">
+                            <li className="flex items-start gap-2"><i data-lucide="check" className="w-4 h-4 text-emerald-500 mt-0.5"></i> Bridge between Lab & User</li>
+                            <li className="flex items-start gap-2"><i data-lucide="check" className="w-4 h-4 text-emerald-500 mt-0.5"></i> 95% Screening Completion Rate</li>
+                        </ul>
+                    </ProjectCard>
+                </div>
+            </div>
+        );
+
+        // --- DOCUMENTATION VIEWS ---
+
+        const XimalayaDocView = ({ onBack }) => (
+            <div className="view-enter max-w-4xl mx-auto">
+                <button onClick={onBack} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-6 transition-colors">
+                    <i data-lucide="arrow-left" className="w-4 h-4"></i> Back to Projects
+                </button>
+                
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-slate-50 border-b border-slate-200 p-8">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <div className="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded mb-2 border border-red-200">INTERNAL / DECLASSIFIED</div>
+                                <h1 className="text-3xl font-bold text-slate-900 mb-2">Product Operation Manual</h1>
+                                <p className="text-slate-600">Handover Documentation for B2B Platform Operations</p>
+                            </div>
+                            <div className="text-right text-xs text-slate-400 font-mono">Doc ID: XM-2025-03<br/>Author: Yuting Chen</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-200">
+                            <div><div className="text-2xl font-bold text-slate-900">15+</div><div className="text-xs text-slate-500 uppercase font-bold">Features Shipped</div></div>
+                            <div><div className="text-2xl font-bold text-slate-900">20+</div><div className="text-xs text-slate-500 uppercase font-bold">Stakeholders Managed</div></div>
+                            <div><div className="text-2xl font-bold text-slate-900">5</div><div className="text-xs text-slate-500 uppercase font-bold">SOPs Established</div></div>
+                        </div>
+                    </div>
+
+                    <div className="p-8 space-y-10">
+                        <DocSection title="0. Feature Shipping Manifest">
+                            <p className="text-slate-600 text-sm mb-4">A comprehensive log of features, optimizations, and bug fixes delivered during the internship period.</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <FeatureBadge name="B2B Clearing Logic" />
+                                <FeatureBadge name="AdWeb Bulk Material" />
+                                <FeatureBadge name="AIGC Audio Stickers" />
+                                <FeatureBadge name="AIGC Insertion Opt" />
+                                <FeatureBadge name="Shownotes Skin" />
+                                <FeatureBadge name="Interactive Splash" />
+                                <FeatureBadge name="Vertical Static Stickers" />
+                                <FeatureBadge name="Consumer Reconciliation" />
+                                <FeatureBadge name="IM Integration" />
+                                <FeatureBadge name="AdWeb Pop-up Tips" />
+                                <FeatureBadge name="Batch Link Import" />
+                                <FeatureBadge name="Android Targeting" />
+                                <FeatureBadge name="Revenue Dashboard" />
+                                <FeatureBadge name="User Targeting Form" />
+                                <FeatureBadge name="Compliance Overhaul" status="in-progress" />
+                            </div>
+                        </DocSection>
+                        <DocSection title="1. Efficiency Automation Suite">
+                            <p className="text-slate-600 text-sm mb-4">To reduce manual overhead in weekly reporting, I developed a Python script to automate data cleaning and format conversion.</p>
+                            <CodeBlock code={`import pandas as pd\ndef process_weekly_report(file_path):\n    df = pd.read_excel(file_path)\n    df.drop_duplicates(subset=['order_id'], inplace=True)\n    df['revenue'].fillna(0, inplace=True)\n    df['net_revenue'] = df['revenue'] * 0.85\n    return df.groupby('category')['net_revenue'].sum().reset_index()\nreport = process_weekly_report('raw_data_2025.xlsx')\nprint("Weekly Report Generated Successfully")`} />
+                        </DocSection>
+                        <DocSection title="2. SOP: Requirement Triage Protocol">
+                             <p className="text-slate-600 text-sm mb-4">Established a strict prioritization framework to manage conflicting demands.</p>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-red-50 p-4 rounded-lg border border-red-100"><div className="text-xs font-bold text-red-700 uppercase mb-1">Priority P0</div><div className="font-bold text-slate-800 mb-2">Client Critical</div><p className="text-xs text-slate-600">Direct requests from Key Accounts.</p></div>
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100"><div className="text-xs font-bold text-blue-700 uppercase mb-1">Priority P1</div><div className="font-bold text-slate-800 mb-2">Platform Opt.</div><p className="text-xs text-slate-600">AdWeb internal efficiency features.</p></div>
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200"><div className="text-xs font-bold text-slate-500 uppercase mb-1">Priority P2</div><div className="font-bold text-slate-800 mb-2">Tech Debt</div><p className="text-xs text-slate-600">Long-term architecture refactoring.</p></div>
+                            </div>
+                        </DocSection>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const GenericProjectDoc = ({ onBack, title, subtitle, id, stats, content, techStack }) => (
+            <div className="view-enter max-w-4xl mx-auto">
+                <button onClick={onBack} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-6 transition-colors">
+                    <i data-lucide="arrow-left" className="w-4 h-4"></i> Back to Projects
+                </button>
+                
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className={`bg-${id === 'trading' ? 'blue' : 'emerald'}-50 border-b border-slate-200 p-8`}>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+                                <p className="text-slate-600">{subtitle}</p>
+                            </div>
+                            <div className="text-right text-xs text-slate-400 font-mono">Project ID: {id.toUpperCase()}-2025</div>
+                        </div>
+                        {stats && <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-200/50">
+                            {stats.map((s, i) => (
+                                <div key={i}>
+                                    <div className="text-2xl font-bold text-slate-900">{s.val}</div>
+                                    <div className="text-xs text-slate-500 uppercase font-bold">{s.label}</div>
+                                </div>
+                            ))}
+                        </div>}
+                    </div>
+
+                    <div className="p-8 space-y-10">
+                        <DocSection title="Project Overview">
+                            <p className="text-slate-600 leading-relaxed">{content}</p>
+                        </DocSection>
+                        
+                        {techStack && <DocSection title="Technical Architecture">
+                             <div className="flex flex-wrap gap-2">
+                                {techStack.map(tech => (
+                                    <span key={tech} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-mono">{tech}</span>
+                                ))}
+                             </div>
+                        </DocSection>}
+
+                        <div className="p-4 bg-slate-50 rounded border border-slate-200 text-sm text-slate-500 italic text-center">
+                            Full detailed case study available upon request during interview.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- UPDATED RESEARCH VIEW (Clickable) ---
+        const ResearchView = ({ onDetailClick }) => (
+            <div className="view-enter space-y-8">
+                <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-slate-900">Academic Research</h2>
+                    <p className="text-slate-500">Exploring the intersection of Media, Tech, and Human Behavior.</p>
+                </div>
+
+                {/* Paper 1: ChatGPT - CLICKABLE */}
+                <div 
+                    onClick={() => onDetailClick('research-chatgpt')} 
+                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 hover-lift transition-all cursor-pointer group relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-bl-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Analysis
+                    </div>
+                    <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1 pr-4">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                                Emotions Behind the Reposts of ChatGPT
+                            </h3>
+                            <div className="text-sm text-slate-600 font-medium mb-3">
+                                On Chinese Social Media Weibo: The Moderating Role of Information Quantity
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-sm">
+                                <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-100 font-medium text-xs font-mono">NLP & Sentiment Analysis</span>
+                                <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded border border-slate-200 text-xs font-mono">N=67,811 Posts</span>
+                            </div>
+                        </div>
+                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                            <i data-lucide="bot" className="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    
+                    <div className="grid lg:grid-cols-2 gap-12 pointer-events-none">
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">Context & Method</h4>
+                                <p className="text-slate-600 leading-relaxed text-sm">
+                                    Analyzed user engagement during the launch of ChatGPT. Used <strong>Sentiment Analysis</strong> on 67k+ Weibo posts to evaluate how emotions drive virality. Specifically tested the <strong>"Moderating Role"</strong> of information density using regression analysis.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">Key Findings for PMs</h4>
+                                <ul className="space-y-2 text-sm text-slate-600">
+                                    <li className="flex gap-2 items-start">
+                                        <i data-lucide="check-circle" className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+                                        <span><strong>Viral Logic:</strong> Both extreme positive and negative emotions significantly drive reposts.</span>
+                                    </li>
+                                    <li className="flex gap-2 items-start">
+                                        <i data-lucide="check-circle" className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+                                        <span><strong>Content Strategy:</strong> High information quantity <strong>suppresses</strong> the spread of negative emotion.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 flex flex-col justify-center">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase text-center mb-2">The Moderating Effect</h4>
+                            <SentimentChart />
+                            <p className="text-[10px] text-slate-400 text-center mt-3 italic">
+                                "Users are less inclined to repost negative content if it contains high information quantity."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Paper 2: Media Convergence - CLICKABLE */}
+                <div 
+                    onClick={() => onDetailClick('research-media')}
+                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 hover-lift transition-all cursor-pointer group relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 bg-yellow-50 text-yellow-600 text-[10px] font-bold px-3 py-1 rounded-bl-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Thesis
+                    </div>
+                    <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1 pr-4">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Impact of Media Convergence on Corporate Performance</h3>
+                            <div className="flex gap-3 text-sm">
+                                <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded border border-yellow-100 font-medium text-xs font-mono">Top Distinction Thesis</span>
+                                <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded border border-slate-200 text-xs font-mono">Panel Data (2001-2022)</span>
+                            </div>
+                        </div>
+                        <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
+                            <i data-lucide="trending-up" className="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div className="grid lg:grid-cols-2 gap-12 pointer-events-none">
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">Abstract & Methodology</h4>
+                                <p className="text-slate-600 leading-relaxed text-sm">
+                                    Collected financial data from <strong>60 A-share listed media companies</strong>. Used <strong>Text Mining</strong> and <strong>Entropy Weight TOPSIS</strong>. Applied a <strong>Two-way Fixed Effects Model</strong> to determine the correlation between tech investment and Tobin's Q.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">Key Findings</h4>
+                                <ul className="space-y-2 text-sm text-slate-600">
+                                    <li className="flex gap-2 items-start">
+                                        <i data-lucide="arrow-right" className="w-4 h-4 text-slate-400 shrink-0 mt-0.5"></i>
+                                        <span><strong>Short-term Pressure:</strong> Tech investment initially increases debt and lowers ROA due to R&D costs.</span>
+                                    </li>
+                                    <li className="flex gap-2 items-start">
+                                        <i data-lucide="arrow-right" className="w-4 h-4 text-slate-400 shrink-0 mt-0.5"></i>
+                                        <span><strong>Long-term Valuation:</strong> However, market sentiment drives up Tobin's Q, rewarding the "Media Convergence" strategy despite short-term dips.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 rounded-xl p-6 border border-slate-100">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase text-center mb-4">Visualizing the Divergence</h4>
+                            <SafeChart />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- MAIN APP ---
+
+       // --- MAIN APP ---
+       const App = () => {
+            const [activeSection, setActiveSection] = useState('dashboard');
+            const [booted, setBooted] = useState(false);
+            const [showWelcome, setShowWelcome] = useState(false); // 新增状态
+
+            useEffect(() => {
+                if(window.lucide) window.lucide.createIcons();
+                window.scrollTo(0,0);
+            }, [activeSection, showWelcome]); // 监听 showWelcome 变化刷新图标
+
+            const handleBootComplete = () => {
+                setBooted(true);
+                // 启动完成后，延迟一点点显示 Welcome Modal，体验更自然
+                setTimeout(() => setShowWelcome(true), 500); 
+            };
+
+            const handleQuickNav = (section) => {
+                setActiveSection(section);
+                setShowWelcome(false);
+            };
+
+            return (
+                <div className="w-full h-full relative flex">
+                    {/* 1. Boot Sequence */}
+                    <BootLayer onComplete={handleBootComplete} />
+                    
+                    {/* 2. Welcome Modal (Only shows after boot & before user dismisses) */}
+                    {booted && showWelcome && (
+                        <WelcomeModal 
+                            onDismiss={() => setShowWelcome(false)} 
+                            onQuickNav={handleQuickNav} 
+                        />
+                    )}
+
+                    {/* Sidebar (不变) */}
+                    <aside className="w-64 bg-white border-r border-slate-200 flex-col hidden md:flex z-10 shrink-0">
+                        <div className="p-6 border-b border-slate-100"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-slate-300/50">YC</div><div><h1 className="font-bold text-slate-900 leading-tight">Yuting Chen</h1><p className="text-xs text-slate-500 font-medium">Product Manager</p></div></div></div>
+                        <nav className="flex-1 pt-6 space-y-1.5 px-3">
+                            <div className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Main Menu</div>
+                            <button onClick={() => setActiveSection('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all rounded-lg ${activeSection === 'dashboard' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><i data-lucide="layout-dashboard" className="w-4 h-4"></i> Dashboard</button>
+                            <button onClick={() => setActiveSection('projects')} className={`w-full flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all rounded-lg ${(activeSection.includes('doc') && !activeSection.includes('research')) || activeSection === 'projects' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><i data-lucide="layers" className="w-4 h-4"></i> Projects</button>
+                            <button onClick={() => setActiveSection('research')} className={`w-full flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all rounded-lg ${activeSection.includes('research') ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}><i data-lucide="file-text" className="w-4 h-4"></i> Research</button>
+                            <div className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-8">Connect</div>
+                            <button onClick={() => window.open('https://github.com/ihateclanauage', '_blank')} className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg"><i data-lucide="github" className="w-4 h-4"></i> GitHub</button>
+                            <button onClick={() => window.location.href='mailto:928920723@qq.com'} className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg"><i data-lucide="mail" className="w-4 h-4"></i> Email</button>
+                        </nav>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col h-full relative bg-slate-50/50 transition-opacity duration-1000" style={{ opacity: booted ? 1 : 0 }}>
+                        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-20">
+                            {/* Mobile Menu Button - 增加 pulse 动画吸引注意力 */}
+                            <div className="md:hidden font-bold text-lg flex items-center gap-2">
+                                <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center text-white text-sm animate-pulse">YC</div>
+                            </div>
+                            
+                            <div className="hidden md:flex items-center text-sm text-slate-500 gap-2"><i data-lucide="command" className="w-4 h-4"></i><span>/</span><span className="capitalize text-slate-800 font-medium">{activeSection.replace('-', ' ')}</span></div>
+                            <div className="flex items-center gap-4 ml-auto">
+                                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span className="text-xs font-bold text-emerald-700">SYSTEM ONLINE</span></div>
+                            </div>
+                        </header>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scroll">
+                            {activeSection === 'dashboard' && <DashboardView booted={booted} />}
+                            {activeSection === 'projects' && <ProjectsView onDetailClick={setActiveSection} />}
+                            {activeSection === 'research' && <ResearchView onDetailClick={setActiveSection} />}
+                            
+                            {/* Details */}
+                            {activeSection === 'ximalaya-doc' && <XimalayaDocView onBack={() => setActiveSection('projects')} />}
+                            {activeSection === 'trading-doc' && <GenericProjectDoc 
+                                id="trading" onBack={() => setActiveSection('projects')}
+                                title="Automated Trading System" subtitle="Independent Development • Python & LLM"
+                                stats={[{val: "24/7", label: "Uptime"}, {val: "<50ms", label: "Latency"}, {val: "Python", label: "Core Stack"}]}
+                                content="Designed and deployed a fully automated cryptocurrency trading bot. The system integrates CCXT for unified exchange APIs and utilizes LLMs (DeepSeek) for real-time sentiment analysis. Implemented risk control modules to halt trading during high volatility."
+                                techStack={['Python', 'CCXT', 'DeepSeek API', 'Pandas', 'PM2', 'Linux']}
+                            />}
+                            {activeSection === 'cas-doc' && <GenericProjectDoc 
+                                id="cas" onBack={() => setActiveSection('projects')}
+                                title="Digital Health Screening" subtitle="Product Intern • Chinese Academy of Sciences"
+                                stats={[{val: "95%", label: "Completion"}, {val: "300+", label: "Elderly Users"}, {val: "Tablet", label: "Platform"}]}
+                                content="Collaborated with neuroscientists to digitize paper-based Alzheimer's screening tests. Focused on accessibility design for elderly users, creating large-format, high-contrast interfaces. The digital solution reduced data entry errors by 100% and significantly improved the efficiency of mass screenings."
+                                techStack={['User Research', 'Figma', 'Accessibility Design', 'Data Visualization']}
+                            />}
+                             {activeSection === 'research-chatgpt' && <GenericProjectDoc 
+                                id="research"
+                                onBack={() => setActiveSection('research')}
+                                title="Emotions Behind the Reposts of ChatGPT"
+                                subtitle="NLP & Sentiment Analysis • Weibo Data"
+                                stats={[
+                                    {val: "67k+", label: "Data Points"},
+                                    {val: "Regression", label: "Method"},
+                                    {val: "NLP", label: "Core Tech"}
+                                ]}
+                                content="This research focuses on the surge of interest surrounding the launch of ChatGPT on Weibo. An analysis of 6,7811 trending Weibo posts indicated that both positive and negative emotions significantly drive reposts. Crucially, high information quantity was found to suppress the viral spread of negative emotions, offering a key insight for content governance."
+                                techStack={['Python', 'Jieba (NLP)', 'Sentiment Analysis', 'Regression Modeling', 'Data Mining']}
+                            />}
+
+                            {activeSection === 'research-media' && <GenericProjectDoc 
+                                id="research"
+                                onBack={() => setActiveSection('research')}
+                                title="Media Convergence & Corp Performance"
+                                subtitle="Quantitative Finance • Master's Thesis"
+                                stats={[
+                                    {val: "60", label: "Companies"},
+                                    {val: "22 Years", label: "Timeframe"},
+                                    {val: "Panel Data", label: "Model"}
+                                ]}
+                                content="Investigated the financial impact of digital transformation in traditional media companies. Constructed a comprehensive evaluation index using Entropy Weight TOPSIS. The Two-way Fixed Effects model revealed a divergence: tech investment causes short-term financial distress but significantly boosts long-term market valuation (Tobin's Q)."
+                                techStack={['Stata', 'Python', 'Entropy Weight TOPSIS', 'Text Mining', 'Econometrics']}
+                            />}
+
+                            <div className="text-center text-xs text-slate-400 pb-8 mt-12">© 2025 Yuting Chen. Dashboard v9.1.</div>
+                            <div className="h-12"></div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        window.onload = () => { if (window.lucide) window.lucide.createIcons(); };
+    </script>
+</body>
+</html>
