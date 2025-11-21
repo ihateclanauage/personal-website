@@ -3,7 +3,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) ![React](https://img.shields.io/badge/React-18.0-61dafb.svg) ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38bdf8.svg) ![Status](https://img.shields.io/badge/Status-Shipped-success)
 
-[Live Demo (在线演示)](https://ihateclanauage.github.io/你的仓库名/) | [Report Bug](https://github.com/ihateclanauage/你的仓库名/issues)
+[Live Demo (在线演示)](https://ihateclanauage.github.io/personal-website/) | [Report Bug](https://github.com/ihateclanauage/personal-website/issues)
 
 ---
 
